@@ -6,13 +6,13 @@
 
 1. 到 Firebase Console 建立或選擇專案。
 2. 在專案設定中新增 Web app，複製 SDK 設定。
-3. 編輯 `firebase.js`，以 Firebase Console 的 `apiKey`、`authDomain`、`projectId`、`appId` 取代 `YOUR_...` 範例值。
+3. 註冊完成後，在 Firebase Console 的 SDK 設定區選「使用 `<script>` 標記」，把設定物件中的 `apiKey`、`authDomain`、`projectId`、`appId` 等值填進 `firebase.js`。目前 `firebase.js` 已填入你提供的截圖中的 Web App 設定。
 
 ## 2. 啟用 Google 登入
 
 在 Firebase Console 開啟 **Authentication → Sign-in method**，啟用 **Google** 並設定支援電子郵件。
 
-在 **Authentication → Settings → Authorized domains** 加入實際網站網域。使用本機測試時依 Firebase Console 的要求加入 `localhost`；正式部署時加入正式網域。`file://` 無法作為授權網域，請用 HTTP(S) 伺服器開啟。
+在 **Authentication → Settings → Authorized domains** 加入實際網站網域。使用本機測試時依 Firebase Console 的要求加入 `localhost`；正式部署時加入正式網域。`file://` 無法作為授權網域，請用 HTTP(S) 伺服器開啟。啟用 Authentication 前，瀏覽器登入 API 可能回覆 `CONFIGURATION_NOT_FOUND`。
 
 ## 3. 本機測試
 
