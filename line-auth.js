@@ -7,37 +7,32 @@ const profileName = document.querySelector("#profileName");
 const profileAvatar = document.querySelector("#profileAvatar");
 const profileEmail = document.querySelector("#profileEmail");
 const profileMenu = document.querySelector("#profileMenu");
-let lineSignedIn = false;
 
-function applyLineProfile(profile) {
-  lineSignedIn = Boolean(profile?.userId);
-  document.body.classList.toggle("line-signed-in", lineSignedIn);
-  document.body.classList.toggle("signed-in", lineSignedIn || document.body.classList.contains("google-signed-in"));
-  if (loginButton) loginButton.hidden = lineSignedIn;
-  if (logoutButton && !document.body.classList.contains("google-signed-in")) logoutButton.hidden = !lineSignedIn;
-  if (profileMenu) profileMenu.disabled = !lineSignedIn && !document.body.classList.contains("google-signed-in");
-  if (lineSignedIn) {
-    profileName.textContent = profile.displayName || "LINE 使用者";
-    profileEmail.textContent = "已使用 LINE 登入";
-    profileAvatar.replaceChildren();
-    if (profile.pictureUrl) {
-      const image = document.createElement("img");
-      image.src = profile.pictureUrl;
-      image.alt = "";
-      image.referrerPolicy = "no-referrer";
-      profileAvatar.append(image);
-    } else {
-      profileAvatar.textContent = (profile.displayName || "L").trim().charAt(0).toUpperCase();
-    }
-    profileAvatar.setAttribute("aria-label", profile.displayName || "LINE 使用者");
-    status.textContent = "已使用 LINE 帳號登入。";
-  } else if (!document.body.classList.contains("google-signed-in")) {
-    profileName.textContent = "訪客";
-    profileEmail.textContent = "尚未登入";
-    profileAvatar.replaceChildren(document.createTextNode("?"));
-    profileAvatar.setAttribute("aria-label", "訪客");
-    status.textContent = "選擇 Google 或 LINE 登入。";
+function setAvatar(profile) {
+  profileAvatar.replaceChildren();
+  if (profile.pictureUrl) {
+    const image = document.createElement("img");
+    image.src = profile.pictureUrl;
+    image.alt = "";
+    image.referrerPolicy = "no-referrer";
+    profileAvatar.append(image);
+  } else {
+    profileAvatar.textContent = (profile.displayName || "L").trim().charAt(0).toUpperCase();
   }
+  profileAvatar.setAttribute("aria-label", profile.displayName || "LINE 使用者");
+}
+
+function setVisitorIfNoGoogle() {
+  if (document.body.classList.contains("google-signed-in")) return;
+  document.body.classList.remove("line-signed-in", "signed-in");
+  profileName.textContent = "訪客";
+  profileEmail.textContent = "尚未登入";
+  profileAvatar.replaceChildren(document.createTextNode("?"));
+  profileAvatar.setAttribute("aria-label", "訪客");
+  profileMenu.disabled = true;
+  logoutButton.hidden = true;
+  loginButton.hidden = false;
+  status.textContent = "選擇 Google 或 LINE 登入。";
 }
 
 async function initLiff() {
@@ -49,7 +44,7 @@ async function initLiff() {
   loginButton.disabled = true;
   status.textContent = "正在初始化 LINE…";
   try {
-    await liff.init({ liffId: LINE_LIFF_ID });
+    await liff.init({ liffId: LINE_LIFF_ID, withLoginOnExternalBrowser: true });
     if (!liff.isLoggedIn()) {
       status.textContent = "請使用 LINE 帳號登入並授權個人檔案。";
       loginButton.disabled = false;
@@ -57,11 +52,19 @@ async function initLiff() {
     }
 
     const profile = await liff.getProfile();
-    applyLineProfile(profile);
-    loginButton.disabled = false;
+    document.body.classList.add("line-signed-in", "signed-in");
+    document.body.classList.remove("google-signed-in");
+    profileName.textContent = profile.displayName || "LINE 使用者";
+    profileEmail.textContent = "已使用 LINE 登入";
+    setAvatar(profile);
+    profileMenu.disabled = false;
+    logoutButton.hidden = false;
+    loginButton.hidden = true;
+    status.textContent = "已使用 LINE 帳號登入。";
   } catch (error) {
     console.error("LIFF initialization failed", error);
     status.textContent = `LINE 初始化失敗：${error.message || "請檢查 LIFF ID 與端點設定。"}`;
+  } finally {
     loginButton.disabled = false;
   }
 }
@@ -74,7 +77,7 @@ loginButton?.addEventListener("click", () => {
 
 logoutButton?.addEventListener("click", () => {
   if (window.liff?.isLoggedIn()) liff.logout();
-  applyLineProfile(null);
+  setVisitorIfNoGoogle();
 });
 
 initLiff();
