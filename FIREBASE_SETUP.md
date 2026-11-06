@@ -28,6 +28,6 @@ python3 -m http.server 8000
 
 目前行程、任務與目標仍儲存在瀏覽器的 `localStorage`，登入僅負責 Google 身分驗證，不會自動同步到 Firebase/Firestore 或其他裝置。
 
-## LINE Login
+## LINE LIFF
 
-LINE Login 前端按鈕已加入；建立 LINE Developers Login channel、設定 callback URL 與安全後端的必要步驟，請參閱 `LINE_SETUP.md`。為避免洩露 Channel Secret 或接受偽造登入，目前尚未配置 Channel ID／後端，因此按鈕不會完成登入。
+LINE 按鈕透過 LIFF SDK 初始化並取得使用者個人名稱和頭像。設定 LIFF ID、scope 與 endpoint 的步驟請參閱 `LINE_SETUP.md`。
