@@ -65,6 +65,8 @@ async function initLiff() {
   } catch (error) {
     console.error("LIFF initialization failed", error);
     status.textContent = `LINE 初始化失敗：${error.message || "請檢查 LIFF ID 與端點設定。"}`;
+    lineSignedIn = false;
+    setVisitorIfNoGoogle();
   } finally {
     loginButton.disabled = false;
   }
