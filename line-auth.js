@@ -1,4 +1,4 @@
-const LINE_LIFF_ID = "YOUR_LIFF_ID";
+const LINE_LIFF_ID = "2012591140-fkt0rsTT";
 
 const loginButton = document.querySelector("#lineSignIn");
 const status = document.querySelector("#authStatus");
