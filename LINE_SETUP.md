@@ -20,3 +20,7 @@ LINE LIFF 必須使用已設定的 HTTPS Endpoint URL，或經 LINE Developers �
 ## 隱私
 
 目前程式只在記憶體中顯示 LINE 個人資料，不將名稱、user ID 或頭像寫到瀏覽器儲存空間。尚未連接資料庫，也不會同步行程。
+
+## GitHub Pages 部署
+
+Repository 已加入 GitHub Actions Pages workflow。於 GitHub repository 的 **Settings → Pages → Build and deployment** 將 Source 設為 **GitHub Actions**，之後 push `main` 會部署靜態網站。預設網址為 `https://yusin20.github.io/11.6/`。部署完成後，將此網址設為 LINE LIFF Endpoint URL。LIFF ID 應由 LINE Developers 建立後填入 `line-auth.js`。修改後請 commit/push，待 Actions 成功，再用 LINE 開啟 `https://liff.line.me/<LIFF_ID>`。
