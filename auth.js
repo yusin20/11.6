@@ -58,10 +58,12 @@ if (!configured) {
 
   onAuthStateChanged(auth, (user) => {
     document.body.classList.toggle("google-signed-in", Boolean(user));
-    document.body.classList.toggle("signed-in", Boolean(user) || Boolean(JSON.parse(localStorage.getItem("lineProfile") || "null")));
+    window.dispatchEvent(new CustomEvent("app-auth-state", { detail: { provider: user ? "google" : null, user } }));
+    const lineSignedIn = document.body.classList.contains("line-signed-in");
+    document.body.classList.toggle("signed-in", Boolean(user) || lineSignedIn);
     loginButton.hidden = Boolean(user);
-    logoutButton.hidden = !user;
-    profileMenu.disabled = !user;
+    logoutButton.hidden = !user && !document.body.classList.contains("line-signed-in");
+    profileMenu.disabled = !user && !document.body.classList.contains("line-signed-in");
     if (user) {
       const displayName = user.displayName || user.email || "Google 使用者";
       profileName.textContent = displayName;
@@ -69,21 +71,12 @@ if (!configured) {
       profileAvatar.textContent = displayName.trim().charAt(0).toUpperCase();
       profileAvatar.setAttribute("aria-label", displayName);
       authStatus.textContent = "已使用 Google 帳號登入。";
-    } else {
-      const lineProfile = JSON.parse(localStorage.getItem("lineProfile") || "null");
-      if (lineProfile?.userId) {
-        profileName.textContent = lineProfile.displayName || "LINE 使用者";
-        profileEmail.textContent = "已使用 LINE 登入";
-        profileAvatar.textContent = (lineProfile.displayName || "L").trim().charAt(0).toUpperCase();
-        profileAvatar.setAttribute("aria-label", lineProfile.displayName || "LINE 使用者");
-        authStatus.textContent = "已使用 LINE 帳號登入。";
-      } else {
-        profileName.textContent = "訪客";
-        profileEmail.textContent = "尚未登入";
-        profileAvatar.textContent = "?";
-        profileAvatar.setAttribute("aria-label", "訪客");
-        authStatus.textContent = "登入後即可使用個人工作區。";
-      }
+    } else if (!lineSignedIn) {
+      profileName.textContent = "訪客";
+      profileEmail.textContent = "尚未登入";
+      profileAvatar.textContent = "?";
+      profileAvatar.setAttribute("aria-label", "訪客");
+      authStatus.textContent = "登入後即可使用個人工作區。";
     }
   });
 }

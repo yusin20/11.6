@@ -7,8 +7,10 @@ const profileName = document.querySelector("#profileName");
 const profileAvatar = document.querySelector("#profileAvatar");
 const profileEmail = document.querySelector("#profileEmail");
 const profileMenu = document.querySelector("#profileMenu");
+let lineSignedIn = false;
 
 function setAvatar(profile) {
+  lineSignedIn = Boolean(profile?.userId);
   profileAvatar.replaceChildren();
   if (profile.pictureUrl) {
     const image = document.createElement("img");
@@ -53,7 +55,6 @@ async function initLiff() {
 
     const profile = await liff.getProfile();
     document.body.classList.add("line-signed-in", "signed-in");
-    document.body.classList.remove("google-signed-in");
     profileName.textContent = profile.displayName || "LINE 使用者";
     profileEmail.textContent = "已使用 LINE 登入";
     setAvatar(profile);
@@ -75,9 +76,31 @@ loginButton?.addEventListener("click", () => {
   else status.textContent = "LIFF SDK 尚未載入，請重新整理頁面。";
 });
 
-logoutButton?.addEventListener("click", () => {
-  if (window.liff?.isLoggedIn()) liff.logout();
-  setVisitorIfNoGoogle();
+window.addEventListener("app-auth-state", (event) => {
+  const user = event.detail?.user;
+  if (user && lineSignedIn) {
+    document.body.classList.remove("line-signed-in");
+    lineSignedIn = false;
+  }
+  if (!user && !lineSignedIn) setVisitorIfNoGoogle();
+});
+
+let lineSignedIn = false;
+const originalSetAvatar = setAvatar;
+function setAvatar(profile) {
+  lineSignedIn = Boolean(profile?.userId);
+  originalSetAvatar(profile);
+  lineSignedIn = Boolean(profile?.userId);
+}
+
+logoutButton?.addEventListener("click", (event) => {
+  if (lineSignedIn && window.liff?.isLoggedIn()) {
+    event.preventDefault();
+    liff.logout();
+    lineSignedIn = false;
+    setVisitorIfNoGoogle();
+    status.textContent = "已登出日序的 LINE 登入狀態。請選擇 Google 登入；LINE App 仍可能保留自己的登入工作階段。";
+  }
 });
 
 initLiff();
