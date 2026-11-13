@@ -78,26 +78,15 @@ loginButton?.addEventListener("click", () => {
 
 window.addEventListener("app-auth-state", (event) => {
   const user = event.detail?.user;
-  if (user && lineSignedIn) {
-    document.body.classList.remove("line-signed-in");
-    lineSignedIn = false;
-  }
   if (!user && !lineSignedIn) setVisitorIfNoGoogle();
 });
-
-let lineSignedIn = false;
-const originalSetAvatar = setAvatar;
-function setAvatar(profile) {
-  lineSignedIn = Boolean(profile?.userId);
-  originalSetAvatar(profile);
-  lineSignedIn = Boolean(profile?.userId);
-}
 
 logoutButton?.addEventListener("click", (event) => {
   if (lineSignedIn && window.liff?.isLoggedIn()) {
     event.preventDefault();
     liff.logout();
     lineSignedIn = false;
+    document.body.classList.remove("line-signed-in");
     setVisitorIfNoGoogle();
     status.textContent = "已登出日序的 LINE 登入狀態。請選擇 Google 登入；LINE App 仍可能保留自己的登入工作階段。";
   }

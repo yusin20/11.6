@@ -58,12 +58,18 @@ if (!configured) {
 
   onAuthStateChanged(auth, (user) => {
     document.body.classList.toggle("google-signed-in", Boolean(user));
-    window.dispatchEvent(new CustomEvent("app-auth-state", { detail: { provider: user ? "google" : null, user } }));
     const lineSignedIn = document.body.classList.contains("line-signed-in");
+    window.dispatchEvent(new CustomEvent("app-auth-state", { detail: { provider: user ? "google" : null, user } }));
     document.body.classList.toggle("signed-in", Boolean(user) || lineSignedIn);
-    loginButton.hidden = Boolean(user);
-    logoutButton.hidden = !user && !document.body.classList.contains("line-signed-in");
-    profileMenu.disabled = !user && !document.body.classList.contains("line-signed-in");
+    if (user) {
+      loginButton.hidden = true;
+      logoutButton.hidden = false;
+      profileMenu.disabled = false;
+    } else if (!lineSignedIn) {
+      loginButton.hidden = false;
+      logoutButton.hidden = true;
+      profileMenu.disabled = true;
+    }
     if (user) {
       const displayName = user.displayName || user.email || "Google 使用者";
       profileName.textContent = displayName;
