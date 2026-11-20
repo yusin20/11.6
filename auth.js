@@ -1,17 +1,11 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 import {
   GoogleAuthProvider,
-  getAuth,
   onAuthStateChanged,
   signInWithPopup,
   signInWithRedirect,
   signOut,
-} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
-import { firebaseConfig } from "./firebase.js";
-
-const configured = Object.values(firebaseConfig).every(
-  (value) => value && !value.startsWith("YOUR_")
-);
+} from "firebase/auth";
+import { firebaseAuth as auth } from "./firebase-app.js";
 
 const loginButton = document.querySelector("#googleSignIn");
 const logoutButton = document.querySelector("#signOut");
@@ -21,12 +15,7 @@ const profileAvatar = document.querySelector("#profileAvatar");
 const profileEmail = document.querySelector("#profileEmail");
 const profileMenu = document.querySelector("#profileMenu");
 
-if (!configured) {
-  authStatus.textContent = "請先設定 Firebase Web App 設定，才能使用 Google 登入。";
-  loginButton.disabled = true;
-} else {
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
+{
   const provider = new GoogleAuthProvider();
 
   loginButton.addEventListener("click", async () => {
