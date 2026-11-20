@@ -45,12 +45,12 @@ async function initLiff() {
   }
 
   loginButton.disabled = true;
-  status.textContent = "正在初始化 LINE…";
+  status.textContent = "正在連線 LINE…";
   try {
-    await liff.init({ liffId: LINE_LIFF_ID, withLoginOnExternalBrowser: true });
+    await liff.init({ liffId: LINE_LIFF_ID });
     if (!liff.isLoggedIn()) {
-      status.textContent = "請使用 LINE 帳號登入並授權個人檔案。";
-      loginButton.disabled = false;
+      status.textContent = "正在開啟 LINE 登入…";
+      liff.login({ redirectUri: window.location.href });
       return;
     }
 
@@ -76,8 +76,7 @@ async function initLiff() {
 }
 
 loginButton?.addEventListener("click", () => {
-  if (window.liff?.isLoggedIn()) return;
-  if (window.liff) liff.login({ redirectUri: window.location.href });
+  if (window.liff) void initLiff();
   else status.textContent = "LIFF SDK 尚未載入，請重新整理頁面。";
 });
 
@@ -97,5 +96,3 @@ logoutButton?.addEventListener("click", (event) => {
     status.textContent = "已登出日序的 LINE 登入狀態。請選擇 Google 登入；LINE App 仍可能保留自己的登入工作階段。";
   }
 });
-
-initLiff();
