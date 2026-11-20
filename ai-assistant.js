@@ -10,6 +10,9 @@ const sendButton = document.querySelector("#aiSend");
 const messages = document.querySelector("#aiChatMessages");
 const status = document.querySelector("#aiChatStatus");
 let chat;
+let chatHistory = [];
+const systemInstruction = "你是日序（個人行程與任務管理工具）的繁體中文 AI 助理。回答清楚、友善、簡潔。不可聲稱自己已替使用者新增、修改或刪除資料；只能提供建議。若使用者詢問目前資料，僅根據他本次提供的日序資料回答，沒有資料就說明限制。";
+const generationConfig = { temperature: 0.55, maxOutputTokens: 900 };
 
 openButton?.addEventListener("click", () => {
   dialog.showModal();
@@ -30,18 +33,22 @@ function getChat() {
     throw new Error("App Check 尚未完成設定。請檢查 Firebase App Check 的網站金鑰設定。");
   }
   if (!chat) {
-    const ai = getAI(firebaseApp, {
-      backend: new GoogleAIBackend(),
-      useLimitedUseAppCheckTokens: true,
-    });
-    const model = getGenerativeModel(ai, {
-      model: "gemini-3.8-flash",
-      systemInstruction: "你是日序（個人行程與任務管理工具）的繁體中文 AI 助理。回答清楚、友善、簡潔。不可聲稱自己已替使用者新增、修改或刪除資料；只能提供建議。若使用者詢問目前資料，僅根據他本次提供的日序資料回答，沒有資料就說明限制。",
-      generationConfig: { temperature: 0.55, maxOutputTokens: 900 },
-    });
-    chat = model.startChat();
+    chat = createChat("gemini-3.5-flash-lite");
   }
   return chat;
+}
+
+function createChat(modelName) {
+  const ai = getAI(firebaseApp, {
+    backend: new GoogleAIBackend(),
+    useLimitedUseAppCheckTokens: true,
+  });
+  const model = getGenerativeModel(ai, { model: modelName, systemInstruction, generationConfig });
+  return model.startChat({ history: chatHistory });
+}
+
+function isTransientServiceError(error) {
+  return /\b503\b|\bUNAVAILABLE\b|deadline expired|temporarily unavailable/i.test(error?.message || "");
 }
 
 form?.addEventListener("submit", async (event) => {
@@ -56,8 +63,23 @@ form?.addEventListener("submit", async (event) => {
   try {
     const context = window.getDayPlannerContext?.();
     const contextText = context ? `\n\n目前日序資料（僅供回答本題）：\n${JSON.stringify(context)}` : "";
-    const result = await getChat().sendMessage(`${question}${contextText}`);
-    addMessage(result.response.text(), "assistant");
+    const prompt = `${question}${contextText}`;
+    let result;
+    try {
+      result = await getChat().sendMessage(prompt);
+    } catch (error) {
+      if (!isTransientServiceError(error)) throw error;
+      status.textContent = "AI 回應較慢，正在切換模型重試…";
+      chat = createChat("gemini-3.8-flash");
+      result = await chat.sendMessage(prompt);
+    }
+    const answer = result.response.text();
+    if (!answer.trim()) throw new Error("AI 沒有產生文字回覆，請再試一次。");
+    addMessage(answer, "assistant");
+    chatHistory.push(
+      { role: "user", parts: [{ text: prompt }] },
+      { role: "model", parts: [{ text: answer }] },
+    );
     status.textContent = "";
   } catch (error) {
     console.error("AI assistant request failed", error);
