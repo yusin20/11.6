@@ -8,6 +8,8 @@ const profileAvatar = document.querySelector("#profileAvatar");
 const profileEmail = document.querySelector("#profileEmail");
 const profileMenu = document.querySelector("#profileMenu");
 let lineSignedIn = false;
+let liffInitialized = false;
+let liffInitialization;
 
 function setAvatar(profile) {
   lineSignedIn = Boolean(profile?.userId);
@@ -44,41 +46,65 @@ async function initLiff() {
     return;
   }
 
-  loginButton.disabled = true;
-  status.textContent = "正在連線 LINE…";
-  try {
-    await liff.init({ liffId: LINE_LIFF_ID });
-    if (!liff.isLoggedIn()) {
-      status.textContent = "正在開啟 LINE 登入…";
-      liff.login({ redirectUri: window.location.href });
+  if (!liffInitialized) {
+    loginButton.disabled = true;
+    status.textContent = "正在連線 LINE…";
+    liffInitialization ||= liff.init({ liffId: LINE_LIFF_ID }).then(() => {
+      liffInitialized = true;
+    });
+    try {
+      await liffInitialization;
+    } catch (error) {
+      liffInitialization = undefined;
+      console.error("LIFF initialization failed", error);
+      setVisitorIfNoGoogle();
+      status.textContent = `LINE 初始化失敗：${error.message || "請檢查 LIFF ID 與端點設定。"}`;
+      loginButton.disabled = false;
       return;
+    } finally {
+      loginButton.disabled = false;
     }
-
-    const profile = await liff.getProfile();
-    window.dispatchEvent(new CustomEvent("line-auth-state", { detail: { user: { uid: profile.userId, displayName: profile.displayName, provider: "line" } } }));
-    document.body.classList.add("line-signed-in", "signed-in");
-    profileName.textContent = profile.displayName || "LINE 使用者";
-    profileEmail.textContent = "已使用 LINE 登入";
-    setAvatar(profile);
-    profileMenu.disabled = false;
-    logoutButton.hidden = false;
-    loginButton.hidden = true;
-    status.textContent = "已使用 LINE 帳號登入。";
-  } catch (error) {
-    console.error("LIFF initialization failed", error);
-    status.textContent = `LINE 初始化失敗：${error.message || "請檢查 LIFF ID 與端點設定。"}`;
-    loginButton.disabled = false;
-    lineSignedIn = false;
-    setVisitorIfNoGoogle();
-  } finally {
-    loginButton.disabled = false;
   }
+
+  if (liff.isLoggedIn()) {
+    try {
+      const profile = await liff.getProfile();
+      window.dispatchEvent(new CustomEvent("line-auth-state", { detail: { user: { uid: profile.userId, displayName: profile.displayName, provider: "line" } } }));
+      document.body.classList.add("line-signed-in", "signed-in");
+      profileName.textContent = profile.displayName || "LINE 使用者";
+      profileEmail.textContent = "已使用 LINE 登入";
+      setAvatar(profile);
+      profileMenu.disabled = false;
+      logoutButton.hidden = false;
+      loginButton.hidden = true;
+      status.textContent = "已使用 LINE 帳號登入。";
+    } catch (error) {
+      console.error("LINE profile lookup failed", error);
+      status.textContent = `LINE 個人資料讀取失敗：${error.message || "請重新登入 LINE。"}`;
+    }
+    return;
+  }
+
+  setVisitorIfNoGoogle();
+  status.textContent = "選擇 Google 或 LINE 登入。";
 }
 
 loginButton?.addEventListener("click", () => {
-  if (window.liff) void initLiff();
-  else status.textContent = "LIFF SDK 尚未載入，請重新整理頁面。";
+  if (!window.liff) {
+    status.textContent = "LIFF SDK 尚未載入，請重新整理頁面。";
+    return;
+  }
+  void initLiff().then(() => {
+    if (!liff.isLoggedIn()) {
+      status.textContent = "正在開啟 LINE 登入…";
+      liff.login({ redirectUri: window.location.origin + window.location.pathname });
+    }
+  });
 });
+
+// Initialize LIFF on return from LINE so the redirect completes as a signed-in session.
+if (window.liff) void initLiff();
+else status.textContent = "LIFF SDK 尚未載入，請重新整理頁面。";
 
 window.addEventListener("app-auth-state", (event) => {
   const user = event.detail?.user;
@@ -93,6 +119,6 @@ logoutButton?.addEventListener("click", (event) => {
     lineSignedIn = false;
     document.body.classList.remove("line-signed-in");
     setVisitorIfNoGoogle();
-    status.textContent = "已登出日序的 LINE 登入狀態。請選擇 Google 登入；LINE App 仍可能保留自己的登入工作階段。";
+    status.textContent = "已登出日序的 LINE 登入狀態。請選擇 Google 或 LINE 登入；LINE App 仍可能保留自己的登入工作階段。";
   }
 });
