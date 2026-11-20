@@ -17,6 +17,7 @@ const profileMenu = document.querySelector("#profileMenu");
 
 {
   const provider = new GoogleAuthProvider();
+  provider.setCustomParameters({ prompt: "select_account" });
 
   loginButton.addEventListener("click", async () => {
     loginButton.disabled = true;
