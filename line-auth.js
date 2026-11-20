@@ -90,6 +90,12 @@ async function initLiff() {
 }
 
 loginButton?.addEventListener("click", () => {
+  if (["localhost", "127.0.0.1"].includes(window.location.hostname)) {
+    status.textContent = "正在開啟 LINE 登入…";
+    window.location.assign(`https://liff.line.me/${LINE_LIFF_ID}`);
+    return;
+  }
+
   if (!window.liff) {
     status.textContent = "LIFF SDK 尚未載入，請重新整理頁面。";
     return;
