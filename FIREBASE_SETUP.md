@@ -27,9 +27,13 @@ npm run dev
 
 Vite 顯示本機網址後，用瀏覽器開啟；正式版用 `npm run build` 建置到 `dist/`，GitHub Actions 會自動建置並部署。若瀏覽器或部署環境不允許彈出視窗，登入流程會改用重新導向。
 
-## 注意
+## 4. Firestore 資料庫
 
-目前行程、任務與目標仍儲存在瀏覽器的 `localStorage`，登入僅負責 Google 身分驗證，不會自動同步到 Firebase/Firestore 或其他裝置。
+應用程式現在把任務、行程與目標儲存在 Firestore 的 `users/{uid}/tasks`、`users/{uid}/events`、`users/{uid}/goals` 子集合中。每個登入者只會讀寫自己的資料；首次登入時，若該帳號的雲端集合尚無資料，網站會把此瀏覽器原有的 localStorage 資料（若存在）匯入該帳號。
+
+請先在 Firebase Console 的 **Firestore Database** 建立資料庫（選正式模式），並到 **Firestore Database → Rules** 貼上專案根目錄的 `firestore.rules` 內容後按 **Publish**。若未建立資料庫或未發布安全規則，網站會顯示 Firestore 錯誤。請勿將規則設成公開讀寫。
+
+Google 登入可直接以 Firebase Authentication UID 作為資料隔離鍵。LINE LIFF 只提供 LINE profile，不會直接登入 Firebase Auth，因此目前雲端儲存請使用 Google 登入；不要將前端提供的 LINE 使用者 ID 當作安全登入憑證。
 
 ## LINE LIFF
 

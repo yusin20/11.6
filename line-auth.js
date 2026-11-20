@@ -25,6 +25,7 @@ function setAvatar(profile) {
 }
 
 function setVisitorIfNoGoogle() {
+  window.dispatchEvent(new CustomEvent("line-auth-state", { detail: { user: null } }));
   if (document.body.classList.contains("google-signed-in")) return;
   document.body.classList.remove("line-signed-in", "signed-in");
   profileName.textContent = "訪客";
@@ -54,6 +55,7 @@ async function initLiff() {
     }
 
     const profile = await liff.getProfile();
+    window.dispatchEvent(new CustomEvent("line-auth-state", { detail: { user: { uid: profile.userId, displayName: profile.displayName, provider: "line" } } }));
     document.body.classList.add("line-signed-in", "signed-in");
     profileName.textContent = profile.displayName || "LINE 使用者";
     profileEmail.textContent = "已使用 LINE 登入";
@@ -88,6 +90,7 @@ logoutButton?.addEventListener("click", (event) => {
   if (lineSignedIn && window.liff?.isLoggedIn()) {
     event.preventDefault();
     liff.logout();
+    window.dispatchEvent(new CustomEvent("line-auth-state", { detail: { user: null } }));
     lineSignedIn = false;
     document.body.classList.remove("line-signed-in");
     setVisitorIfNoGoogle();
